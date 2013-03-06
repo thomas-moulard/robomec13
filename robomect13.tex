@@ -241,17 +241,204 @@ and are unique to RobOptim.
 \subsection{Costs and constraints toolbox}
 
 
-Unlike others
+Unlike others frameworks where computations are tightly linked to one
+problem and one solver, the abstraction layer of RobOptim allows user
+to implement toolboxes of reusable functions. This part of RobOptim is
+dedicated to robotics. The ``trajectory'' layer of RobOptim is
+currently providing trajectores defined as B-Splines and associated
+mathematical functions to realize minimal time optimization for
+instance.
 
+
+\subsection{Toward easy and safe problem design}
+
+
+FIXME
 
 \section{Applications and case study}\label{sec:application}
 
+
+RobOptim has been used to solve several different types of numerical
+optimization problems applied to robotics. The two scenarii that will
+be detailed here are footsteps optimization and posture optimization
+for a humanoid robot. Another important point is the extensibility of
+the framework. To demonstrate RobOptim capacities to adapt to new
+types of optimization problems an example of such extension will be
+given.
 \subsection{Step planning for humanoid robots}
+
+
+Generating a walking motion in an environment cluttered with obstacles
+is challenging. One commonly used approach are random searching
+trees. These probabilistic algorithm will try to create a path between
+the starting point and the goal point by sampling configurations
+randomly. This family of algorithms have the ability to find solutions
+for highly dimensioned problems on a reasonable time. However, the
+random nature of these algorithms tend to produce paths which are not
+``human-like''. One solution to improve these paths is numerical
+optimization. Instead of considering the whole body trajectory,
+RobOptim has been used to optimize a biped robot walking trajectory
+determined beforehand by a motion planning algorithm.
+
+Let $\gamma$ be the initial robot waist trajectory defined as a
+B-Spline from $t_{min}$ to $t_{max}$. A free time trajectory $\Gamma$
+is defined from $T_{min}$ to \linebreak $T_{max} = T_{min} + \lambda
+(t_{max} - t_{min})$ as
+\begin{equation}
+  \Gamma_{\lambda} (T) = \gamma (t_{min} + \frac{1}{\lambda} (T -
+  T_{min}))
+\end{equation}
+
+\begin{figure}
+  \begin{center}
+    \begin{tabular}{|c|l l l| l |l l l|}
+      \hline
+      Time
+      & \multicolumn{3}{|c|}{control point 1}
+      & \ldots
+      & \multicolumn{3}{|c|}{control point $n$}\\
+      \hline
+      $\lambda$
+      & $x_0$ & $y_0$ & $\theta_0$
+      & \ldots
+      & $x_n$ & $y_n$ & $\theta_n$\\
+      \hline
+    \end{tabular}
+  \end{center}
+  \caption{Optimization variables for walking motion problem\label{fig:optim-param}}
+\end{figure}
+
+
+The use of a free time trajectory allows the solver to both optimize
+trajectory shape and speed by respectively changing the control points
+and the scale $\lambda$. Optimization variables are illustrated
+by~\autoref{fig:optim-param}. The free time trajectory derived from
+the initial trajectory $\gamma$ is used as the state of the solver.
+
+
+\begin{figure}
+  \begin{center}
+    \begin{tabular}{|c|c|}
+      \hline Cost function & $f(\mathbf{x}) = \lambda$\\ Speed
+      constraint & $\forall T, \text{foot},\quad
+      (\frac{v_{\text{foot}}^{x}}{v_{\text{max}}^{x}})^2 +
+      (\frac{v_{\text{foot}}^{y}}{v_{\text{max}}^{y}})^2 - 1 \leq
+      0$\\ Distance constraint & $\forall T,\quad\text{distance} (\text{obstacle},
+      \Gamma (T)) > 0$\\ \hline
+    \end{tabular}
+    \caption{Walking optimization problem formulation\label{fig:pb-walking}}
+  \end{center}
+\end{figure}
+
+
+The problem cost function is defined as $\lambda$. It corresponds to
+minimizing the time by accelerating the trajectory as much as
+possible. To ensure that the final trajectory stay feasible while
+encouraging forward motion, a speed constraint is added which take
+separately into account the front speed $v^x$ and the lateral speed
+$v^y$ of each foot of the robot. Another constraint is preventing the
+robot to collide with environment obstacles. The problem definition is
+detailed in~\autoref{fig:pb-walking}.
+
+
+\begin{figure}
+  \begin{center}
+    %\includegraphics[width=\linewidth]{two-chairs.png}
+    \includegraphics[width=\linewidth]{hrp2-two-chairs.png}
+    \caption{Walking trajectory optimization\label{fig:result-walking}}
+  \end{center}
+\end{figure}
+
+
+This non-linear problem has been successfully solved by RobOptim while
+relying on the proprietary solver CFSQP and result is show
+on~\autoref{fig:result-walking}.
+
+
 \subsection{Posture optimization for humanoid robots}
+
+
+\begin{figure}
+  \begin{center}
+    \includegraphics[width=\linewidth]{agent-067.jpg}
+    \caption{Posture optimization\label{fig:stence-optimization}}
+  \end{center}
+\end{figure}
+
+
+Another problem is posture optimization, which consists in choosing
+the best configuration such that a system will accomplish the
+objectives it has been assigned. In this example, the goal is to find
+a configuration as close as possible to a goal posture while taking
+into account various constraints. In this case, robots and objects
+environment are considered as elements of the optimization
+problem. Constraints include: robot and objects static equilibrium,
+Newton's third law, Coulomb friction model, fixed grasp model for
+bilateral contact forces, joints limits and torques limits. This
+problem is described extensively
+in~\cite{DBLP:conf/icra/BouyarmaneK11} and demonstrated the ability of
+RobOptim to solve complex large scale non-linear problems.
+
+
 \subsection{Extending the framework: least square optimization}
+
+
+Initially, non-linear optimization problems with constraints have been
+solved with RobOptim. By providing a generic computational framework,
+the initial infrastructure has been extended to other types of
+optimization problems such as least square problems. In least square
+problems, cost function can be expressed as:
+
+\begin{equation}
+  f(\mathbf{x}) = \sum_i (\mathbf{x}_i - \mathbf{x}^{ref}_i)^2
+\end{equation}
+
+
+Another function type called \texttt{SumOfC1Squares} has been derived
+from the \texttt{DifferentiableFunction} class. The CMinPack solver
+has then been wrapped into a RobOptim solver class which takes as
+input problem of the type: \texttt{Problem<SumOfC1Squares, vector<> >}
+which means that the cost function must be a sum of squares while
+constraints are not supported for this particular type of problems.
+
+The introduction of this new set of feature did not require any change
+in the RobOptim structure and proved the genericity of our approach.
+
 
 \section{Conclusion}\label{sec:conclusion}
 
-\section*{Acknowledgments}\label{sec:acknowledgments}
+
+A new approach to optimization problem representation has been exposed
+in this paper. By expressing numerical optimization problems through
+C++ typing, the RobOptim optimization framework provides a unified
+computational model. Moreover, through advanced C++ template
+meta-programming, efficiency is preserved while giving the capacity to
+express high-level mathematical objects such as cost functions and
+constraints. These features have been proved useful to solve different
+types of robotics problem. Even while being generic, the RobOptim core
+layer suffers from limitions. It still lacks support for optimization
+in non-scalar spaces such as $\text{SO}(3)$. By importing knowledge
+about the structure of the optimization variables, solvers could
+realize more efficient computation. For instance, 3d rotations can be
+represented by homogeneous matrices, quaternions, vector and angle,
+etc. Switching from one representation to another may lead to better
+convergence and a decrease in the number of necessary mathematical
+operation. One goal would be to both be able to express information
+regarding the optimization variables structure and find a method to
+help solvers rely on these additional information. To achieve this
+level of expressiveness, taking part of modern C++ feature is
+mandatory and no optimization framework is providing yet this kind of
+help when designing an optimization problem.
+
+
+To conclude, RobOptim is a step forward toward making optimization
+techniques available for non-expert users by providing an easy to
+understand and generic model, strong C++ typing ensuring safety and
+toolboxes containing robotics oriented functions that may be reuse
+when building its own optimization problem.
+
+
+\section{Bibliography}\label{sec:bibliography}
+\bibliography{robomec13.bib}
 
 \end{document}
