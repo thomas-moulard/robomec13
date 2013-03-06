@@ -20,7 +20,8 @@
 \usepackage{url}
 \usepackage{epigraph}
 \usepackage{hyperref}
-\usepackage{natbib}
+\usepackage{cite} % natbib
+\usepackage{flushend}
 
 \ifCLASSINFOpdf
 \usepackage[pdftex]{graphicx}
@@ -37,38 +38,65 @@
 \usepackage{tikz, pgfplots}
 \usepackage{tikz-qtree}
 
+\pgfplotsset{compat=1.7}
 \usetikzlibrary{patterns}
 
 \begin{document}
 \title{RobOptim: an Optimization Framework for Robotics}
 
 \author{\IEEEauthorblockN{Thomas Moulard}
-\IEEEauthorblockA{FIXME}
+\IEEEauthorblockA{%
+  CNRS-AIST, JRL (Joint Robotics Laboratory), UMI 3218/CRT,\\
+  Intelligent Systems Research Institute,\\
+  AIST Central 2, Umezono 1-1-1,\\
+  Tsukuba, Ibaraki 305-8568 Japan}
 \and
 \IEEEauthorblockN{Florent Lamiraux}
-\IEEEauthorblockA{FIXME}
+\IEEEauthorblockA{LAAS-CNRS, Universit\'e de Toulouse\\
+  7, avenue du Colonel Roche\\
+  31077 Toulouse cedex 4, France}
 \and
 \IEEEauthorblockN{Karim Bouyarmane}
-\IEEEauthorblockA{FIXME}
+\IEEEauthorblockA{%
+  ATR Computational Neuroscience Laboratories,\\
+  Department of Brain Robot Interface,\\
+  2-2-2 Hikaridai, Seika-cho, Soraku-gun,\\
+  Kyoto 619-0288, Japan}
 \and
 \IEEEauthorblockN{Eiichi Yoshida}
-\IEEEauthorblockA{FIXME}}
+\IEEEauthorblockA{%
+  CNRS-AIST, JRL (Joint Robotics Laboratory), UMI 3218/CRT,\\
+  Intelligent Systems Research Institute,\\
+  AIST Central 2, Umezono 1-1-1,\\
+  Tsukuba, Ibaraki 305-8568 Japan}}
 
 \maketitle
 
 \begin{abstract}
-\boldmath
-The abstract goes here.
+\boldmath Numerical optimization is a mathematical tools useful for
+various areas of robotics. However tackling optimization problems
+properly require the use of non-trivial algorithms difficult to
+understand, tune and is error-prone. RobOptim aims at providing a
+unified framework for differens kinds of optimization problems while
+relying on strong C++ typing to ensure efficient and correct
+computations. This paper will present this software, demonstrate how
+to extend it and illustrate current use by two full scale robotics
+examples.
 \end{abstract}
+
+\begin{IEEEkeywords}
+  Humanoid Robots, Numerical Optimization, Software
+\end{IEEEkeywords}
 
 \IEEEpeerreviewmaketitle
 
 \section{Introduction}\label{sec:introduction}
 
 
-Over the past years, numerical optimization proved itself particulaly
-suited for various robotics use such as posture or trajectory
-optimization, robot control and more. These applications yield both
+\IEEEPARstart{O}{ver} the past years, numerical optimization proved
+itself particulaly suited for various robotics use such as posture or
+trajectory optimization~\cite{miossec06,saab-tro-12}, robot
+control~\cite{mansard-icra-12} and more. These applications yield both
 linear and non-linear optimizations problems with equalities and
 inequalities constraints. Robot control also relies on other types of
 optimization problems such as quadrating programming. As these
@@ -79,13 +107,13 @@ issues, assuring that the algorithm behaves properly in all cases and
 reports correctly the errors it may encounter is challenging, in
 particular for roboticians which are not experts in optimization
 techniques. Among available optimization toolboxes, the Matlab
-Optimization Toolbox[CITE], the Open Optimization library, OPT++,
-IPOPT, SciPy and the GSL (Gnu Scientific Library) all provides some
-optimization algorithms. Unfortunately, these libraries suffer from
-several drawbacks: difficult to use, no support for advanced
-algorithms such as support for constrained optimization, efficiency
-issues, etc. They also all lack a unified model expressing
-optimization problems.
+Optimization Toolbox~\cite{matlab}, the Open Optimization library,
+OPT++, IPOPT~\cite{ipopt}, SciPy~\cite{scipy} and the GSL (Gnu
+Scientific Library)~\cite{gsl} all provides some optimization
+algorithms. Unfortunately, these libraries suffer from several
+drawbacks: difficult to use, no support for advanced algorithms such
+as support for constrained optimization, efficiency issues, etc. They
+also all lack a unified model expressing optimization problems.
 
 
 RobOptim solves these limitations by introducing a model allowing to
@@ -101,12 +129,23 @@ of problems. The conclusion will detail feedback from current users of
 RobOptim and present the roadmap for the next developments.
 
 
+\begin{figure}[ht!]
+  \begin{center}
+    \includegraphics[width=\linewidth]{agent-067.jpg}
+    \caption{Posture optimization while considering dynamic
+      constraints with RobOptim.\label{fig:stence-optimization}}
+  \end{center}
+\end{figure}
+
+
+
 \section{RobOptim overview}\label{sec:roboptim}
 
 
 RobOptim is a set of open-source C++ libraries licensed under the LGPL
 license. Code source, documentation and examples are available on the
-project webpage: \mbox{\url{http://www.roboptim.net/}}.
+project webpage: \mbox{\url{http://www.roboptim.net/}}. The source
+code is available under the LGPL open-source license.
 
 
 The RobOptim framework is divided into three parts. The core layer
@@ -153,10 +192,12 @@ jacobian and in some cases even the hessian of the used
 functions. Hence, a function which provides the maximum information
 about itself will be usable with a larger proportion of solvers.
 
-\begin{figure}
+\begin{figure}[ht!]
   \begin{center}
     \begin{tikzpicture}
-      \draw (0,0) circle (1) ;
+      \draw (0,-1.5) circle (1) node {Function} ;
+      \draw (0,-1) circle (2) node [above=.75cm] {Function w/ gradient} ;
+      \draw (0,0) circle (3.1) node [above=1.3cm] {Function w/ gradient and hessian} ;
     \end{tikzpicture}
   \end{center}
   \caption{Sets representing the different kind of functions that
@@ -253,7 +294,22 @@ instance.
 \subsection{Toward easy and safe problem design}
 
 
-FIXME
+RobOptim is heavily relying on templated meta-programming, a C++
+feature allowing notably to defined parametrized types and execute
+algorithms at compile time~\cite{iso14882}. By defining problems and
+solver through parametrized types, the compiler is able to check that
+the functions that are used to instantiate the optimization problem
+are compatible with the type of problem under construction. Then, only
+solver supporting this kind of problem can be used. Through
+meta-programming, these safety checks are evaluated at compile-time
+and thus do not impact final performances. Regarding ease of use,
+having a unified representation of all models which matches closely
+the theory simplifies the understanding of the implementation process.
+To finish, RobOptim relies on modern tools such as Boost and Eigen to
+support natural ways of implementing algebra computation. Additional
+tools such as gradient checks through finite differentiation is also
+provided to help debugging functions.
+
 
 \section{Applications and case study}\label{sec:application}
 
@@ -264,7 +320,10 @@ be detailed here are footsteps optimization and posture optimization
 for a humanoid robot. Another important point is the extensibility of
 the framework. To demonstrate RobOptim capacities to adapt to new
 types of optimization problems an example of such extension will be
-given.
+given. These experiments aimed at generating motion for the humanoid
+robot HRP-2~\cite{hrp2}.
+
+
 \subsection{Step planning for humanoid robots}
 
 
@@ -289,7 +348,7 @@ is defined from $T_{min}$ to \linebreak $T_{max} = T_{min} + \lambda
   T_{min}))
 \end{equation}
 
-\begin{figure}
+\begin{figure}[ht!]
   \begin{center}
     \begin{tabular}{|c|l l l| l |l l l|}
       \hline
@@ -316,7 +375,7 @@ by~\autoref{fig:optim-param}. The free time trajectory derived from
 the initial trajectory $\gamma$ is used as the state of the solver.
 
 
-\begin{figure}
+\begin{figure}[ht!]
   \begin{center}
     \begin{tabular}{|c|c|}
       \hline Cost function & $f(\mathbf{x}) = \lambda$\\ Speed
@@ -341,7 +400,7 @@ robot to collide with environment obstacles. The problem definition is
 detailed in~\autoref{fig:pb-walking}.
 
 
-\begin{figure}
+\begin{figure}[ht!]
   \begin{center}
     %\includegraphics[width=\linewidth]{two-chairs.png}
     \includegraphics[width=\linewidth]{hrp2-two-chairs.png}
@@ -351,19 +410,11 @@ detailed in~\autoref{fig:pb-walking}.
 
 
 This non-linear problem has been successfully solved by RobOptim while
-relying on the proprietary solver CFSQP and result is show
-on~\autoref{fig:result-walking}.
+relying on the proprietary solver CFSQP~\cite{cfsqp} and result is
+show on~\autoref{fig:result-walking}.
 
 
 \subsection{Posture optimization for humanoid robots}
-
-
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=\linewidth]{agent-067.jpg}
-    \caption{Posture optimization\label{fig:stence-optimization}}
-  \end{center}
-\end{figure}
 
 
 Another problem is posture optimization, which consists in choosing
@@ -376,8 +427,8 @@ problem. Constraints include: robot and objects static equilibrium,
 Newton's third law, Coulomb friction model, fixed grasp model for
 bilateral contact forces, joints limits and torques limits. This
 problem is described extensively
-in~\cite{DBLP:conf/icra/BouyarmaneK11} and demonstrated the ability of
-RobOptim to solve complex large scale non-linear problems.
+in~\cite{Bouyarmane2011a,Bouyarmane2010} and demonstrated the ability
+of RobOptim to solve complex large scale non-linear problems.
 
 
 \subsection{Extending the framework: least square optimization}
@@ -438,7 +489,7 @@ toolboxes containing robotics oriented functions that may be reuse
 when building its own optimization problem.
 
 
-\section{Bibliography}\label{sec:bibliography}
-\bibliography{robomec13.bib}
+\bibliographystyle{IEEEtran}
+\bibliography{IEEEabrv.bib,robomec13.bib}
 
 \end{document}

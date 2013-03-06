@@ -7,3 +7,5 @@
 *~
 *.auxbbl.make.temp
 *.out
+*.bbl
+*.blg
