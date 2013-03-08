@@ -35,12 +35,6 @@
 \usepackage{algorithmic}
 \usepackage{url}
 
-\usepackage{tikz, pgfplots}
-\usepackage{tikz-qtree}
-
-\pgfplotsset{compat=1.7}
-\usetikzlibrary{patterns}
-
 \begin{document}
 \title{RobOptim: an Optimization Framework for Robotics}
 %
@@ -147,10 +141,19 @@ LGPL license. Source code, documenta\-tion and examples are provided by
 the project webpage: \mbox{\url{http://www.roboptim.net/}}.
 
 
+\begin{figure}
+  \begin{center}
+    \includegraphics[width=.95\linewidth]{roboptim-architecture.pdf}
+  \end{center}
+  \caption{Sets representing the different kind of functions that
+    RobOptim can model out-of-the-box.}\label{fig:layers}
+\end{figure}
+
+
 The RobOptim framework is divided into three parts: the core, solver
-and application layers. The core layer provides a computational model
-expressive enough to formulate different types of optimization
-problems. The solver layer gathers various optimization
+and application layers~\autoref{fig:layers}. The core layer provides a
+computational model expressive enough to formulate different types of
+optimization problems. The solver layer gathers various optimization
 algorithms. The third layer consists in several application-dependent
 packages bundling reusable mathematical functions.
 
@@ -197,17 +200,6 @@ Jacobian and in some cases even the functions Hessian. Hence,
 functions providing maximum information about themselves will be
 compatible with a larger proportion of solvers.
 
-\begin{figure}[ht!]
-  \begin{center}
-    \begin{tikzpicture}
-      \draw (0,-1.5) circle (1.1) node {\ldots and hessian} ;
-      \draw (0,-1) circle (2) node [above=.75cm] {Function w/ gradient} ;
-      \draw (0,0) circle (3.1) node [above=1.4cm] {Function} ;
-    \end{tikzpicture}
-  \end{center}
-  \caption{Sets representing the different kind of functions that
-    RobOptim can model out-of-the-box.}\label{fig:functions}
-\end{figure}
 
 In RobOptim, each mathematical function is represented by a different
 C++ class. All of these types then inherit the abstract kind of
@@ -218,9 +210,8 @@ evaluate itself and its gradient (\texttt{DifferentiableFunction}),
 function that can evaluate itself, its gradient and its hessian
 (\texttt{TwiceDifferentiableFunction}), etc.  Let 'A <: B' be the
 relationship ``type B is a subtype (subclass) of A'' or ``B inherits
-from A''. Then a partial order can be defined where: Function <:
-DifferentiableFunction <: TwiceDifferentiableFunction. It can also be
-understood through sets as illustrated by~\autoref{fig:functions}.
+from A''. Then a partial order can be defined where:
+\texttt{Function} <: \texttt{DifferentiableFunction} <: \texttt{TwiceDifferentiableFunction}.
 
 
 \subsection{Optimization problem definition and problem resolution}
@@ -407,7 +398,6 @@ in~\autoref{fig:pb-walking}.
 
 \begin{figure}[ht!]
   \begin{center}
-    %\includegraphics[width=\linewidth]{two-chairs.png}
     \includegraphics[width=\linewidth]{hrp2-two-chairs.png}
     \caption{Walking trajectory optimization\label{fig:result-walking}}
   \end{center}
