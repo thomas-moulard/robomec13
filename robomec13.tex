@@ -94,13 +94,13 @@ posture or trajectory optimization~\cite{miossec06,saab-tro-12}, robot
 control~\cite{mansard-icra-12} and more. These applications yield both
 linear and non-linear optimizations problems with equalities and
 inequalities constraints. Robot control also relies on other types of
-optimization such as quadrating programming. As robot control
+optimization such as quadratic programming. As robot control
 algorithms run in real-time, it leads to strong constraints on the
 implementation efficiency. The design and implementation of a solver
 is tedious and error-prone. Avoiding numerical precision issues,
 ensuring that the algorithm behaves properly in all cases even with
 ill-conditioned problems is challenging, in particular for roboticists
-which are not experts in optimization techniques. Among available
+who are not experts in optimization techniques. Among available
 optimization toolboxes, the Matlab Optimization Toolbox~\cite{matlab},
 the Open Optimization library, OPT++, IPOPT~\cite{ipopt},
 SciPy~\cite{scipy} and the GSL (Gnu Scientific Library)~\cite{gsl} all
@@ -112,9 +112,14 @@ lack a unified model expressing optimization problems.
 
 
 RobOptim solves these limitations by introducing a framework to model
-any continuous optimization problem, constrained or not. Its design
-was focused on providing an easy to use C++ set of safe and efficient
-libraries which can be used to prototype robotics applications. The
+any continuous optimization problem, constrained or not. The design
+is focused on providing an easy to use C++ set of safe and efficient
+libraries which can be used to prototype robotics applications.
+Let us emphasize here that our framework does not implement any numerical
+optimization algorithm. Instead, it provides a model for functions, problems
+and solvers on the one hand and plug-ins wrapping existing solvers as CFSQP
+or IPOPT on the other hand.
+The
 RobOptim computational model will be first introduced
 in~\autoref{sec:roboptim} and different applications will be detailed
 in~\autoref{sec:application}. In particular, an extension of RobOptim
@@ -145,12 +150,12 @@ the project webpage: \mbox{\url{http://www.roboptim.net/}}.
 The RobOptim framework is divided into three parts. The core layer
 provides a computation model expressive enough to model different
 types of optimization problems. The solver layer gathers different
-optimization algorithms which are. The third layer consists in several
-application dependant packages bundling reusable mathematical
+optimization algorithms. The third layer consists in several
+application dependent packages bundling reusable mathematical
 functions.
 
 
-\subsection{Mathematical functions representation}
+\subsection{Mathematical function representation}
 
 
 Continuous optimization problems can be defined as follow:
@@ -165,7 +170,7 @@ solutions. This space is usually defined by a set of inequality and
 equality constraints:
 
 \begin{equation}
-  \mathbf{X} \equiv \left\{
+  \mathbf{X} \triangleq \left\{
   \begin{array}{l l}
     c_i (x) = 0    & \quad i \in \xi \\
     c_j (x) \leq 0 & \quad j \in \nu \\
@@ -178,7 +183,7 @@ constraints. $i$ and $j$ are the indices identifying the constraints.
 The mathematical functions $f$ and $c_k$ ($k \in \xi \cup \nu$) must
 provide a way to evaluate their result at any point they are
 defined. Their associated gradient and hessian can also be
-provided. To finish, each of these function may be catorized as
+provided. Finally, each of these function may be catorized as
 belonging to a set of functions matching a particular structure which
 may help the resolution. One example is linear functions. The goal of
 the RobOptim core layer is to express these features through the C++
@@ -245,9 +250,9 @@ compile time that the constraint is a subtype of the
 $\texttt{LinearFunction}$ type.
 
 
-Once the problem is defined, a solver that will solve the problem need
-to be instantiated. Each solver is parametrized by the same types than
-an optimization problem. Therefore the solver $S<P_1,C_{L1}>$ can
+Once the problem is defined, a solver that will solve the problem needs
+to be instantiated. Each solver is parametrized by the same types as
+optimization problems. Therefore the solver $S<P_1,C_{L1}>$ can
 solve the problem $P<P_2,C_{L2}>$ if the following relation is true:
 
 
@@ -259,24 +264,24 @@ solve the problem $P<P_2,C_{L2}>$ if the following relation is true:
 Basically, the problem can be solved if all types provide enough or
 more information than necessary. For instance if gradient are
 required, the function may also provide hessian computation but if
-gradient are lacking the compile time assertions will fail and prevent
+gradient is lacking the compile time assertions will fail and prevent
 the user from building an invalid optimization problem.
 
 By separating problem expression from solver, dynamic changes of the
 solving algorithm are possible. Each solver is bundled as a plug-in
-which is loaded at run-time. The interest is to let the user change
-its problem complexity during its design process freely. Other
+which is loaded at run-time. The interest is to let the user freely change
+the problem complexity during the design process. Other
 frameworks would require a different API depending on the kind of
 optimization at hand, where through RobOptim changes are minimal. One
 may choose to use a more powerful than required solver at first and
-then refine their choice or implement later a new plug-in providing
+then refine the choice or implement later a new plug-in providing
 the best algorithm for one particular application. These features are
 provided through meta-programming techniques and come with a near zero
-cost\footnote{RobOptim core do not realize copy so the additional
+cost\footnote{RobOptim core does not realize copy so the additional
   runtime cost is only due to calls to virtual functions.} at runtime
 and are unique to RobOptim.
 
-\subsection{Costs and constraints toolbox}
+\subsection{Cost and constraint toolbox}
 
 
 Unlike others frameworks where computations are tightly linked to one
@@ -294,10 +299,10 @@ instance.
 RobOptim is heavily relying on templated meta-programming, a C++
 language feature allowing notably to defined parametrized types and
 execute algorithms at compile time~\cite{iso14882}. By defining
-problems and solver through parametrized types, the compiler is able
+problems and solvers through parametrized types, the compiler is able
 to check that the functions that are used to instantiate the
 optimization problem are compatible with the type of problem under
-construction. Thus, only solver supporting this kind of problem can be
+construction. Thus, only solvers supporting this kind of problem can be
 used. Through meta-programming, these safety checks are evaluated at
 compile-time and thus do not impact final performances. Regarding ease
 of use, having a unified representation of all models which matches
@@ -326,7 +331,9 @@ motion for the humanoid robot HRP-2~\cite{hrp2}.
 
 Generating a walking motion in an environment cluttered with obstacles
 is challenging. One commonly used approach are Rapidly exploring
-Random Trees. These probabilistic algorithm will try to create a path
+Random Trees
+applied to the robot bounding box or to the robot itself sliding on the ground~\cite{dalibard2011small}.
+These probabilistic algorithm will try to create a path
 between the starting point and the goal point by sampling
 configurations randomly and have the ability to find solutions for
 highly dimensioned problems on a reasonable time. However, the
@@ -392,7 +399,7 @@ minimizing the time by accelerating the trajectory as much as
 possible. To preserve a feasible final trajectory while encouraging
 forward motion, a speed constraint is added which take separately into
 account the front speed $v^x$ and the lateral speed $v^y$ of each foot
-of the robot separately. Another constraint is preventing the robot to
+of the robot. Another constraint is preventing the robot to
 collide with obstacles. The problem definition is detailed
 in~\autoref{fig:pb-walking}.
 
@@ -433,25 +440,28 @@ of RobOptim to solve complex large scale non-linear problems.
 
 Initially, non-linear optimization problems with constraints have been
 solved with RobOptim. By providing a generic computational framework,
-it is possible toe extend RobOptim to support other types of problems
-such as least square optimization. In least square problems, cost
-function must be expressed as:
+it is possible to extend RobOptim to support other types of problems
+such as least square optimization. A least square optimization problem is an
+unconstrained problem the cost function of which is defined by
 
 \begin{equation}
-  f(\mathbf{x}) = \sum_i (\mathbf{x}_i - \mathbf{x}^{ref}_i)^2
+  f(\mathbf{x}) = \sum_{i=1}^m f_i (\mathbf{x})^2
 \end{equation}
+where $f_1,\cdots,f_m$ are $m$ non-linear differentiable functions from $\mathbb{R}^n$ to $\mathbb{R}$.
 
-
-To identify functions matching this definition, another function type
+To build functions matching this definition, another function type
 called \texttt{SumOfC1Squares} has been derived from the
-\texttt{DifferentiableFunction} class. The CMinPack solver has then
-been wrapped into a RobOptim solver class which takes as input problem
-of the type: \texttt{Problem<SumOfC1Squares, vector<> >} which means
-that the cost function must be a sum of squares while constraints are
-not supported for this particular type of problems.
+\texttt{DifferentiableFunction} class. The constructor of this new type takes
+as input the function from $\mathbb{R}^n$ to $\mathbb{R}^m$ the coordinates of
+which are $f_1,\cdots,f_m$. \texttt{SumOfC1Squares} then redefines evaluation
+and gradient of $\sum_{i=1}^m f_i (\mathbf{x})^2$.
 
-The introduction of this new set of feature did not require any change
-in the RobOptim infrastructure and proved the genericity of our
+The CMinPack solver has then
+been wrapped into a RobOptim solver class which takes as input problem
+of the type: \texttt{Problem<SumOfC1Squares, vector<> >}.
+
+The introduction of this new type of solver did not require any change
+in the RobOptim infrastructure and proved the genericity of the
 approach.
 
 
