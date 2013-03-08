@@ -151,17 +151,19 @@ the project webpage: \mbox{\url{http://www.roboptim.net/}}.
   \begin{center}
     \includegraphics[width=.95\linewidth]{roboptim-architecture.pdf}
   \end{center}
-  \caption{Sets representing the different kind of functions that
-    RobOptim can model out-of-the-box.}\label{fig:layers}
+  \caption{RobOptim three layers architecture: solver (embedding
+    existing state of the Art algorithms), core and
+    applications.}\label{fig:layers}
 \end{figure}
 
 
-The RobOptim framework is divided into three parts: the core, solver
+The RobOptim framework is divided into three parts: the solver, core
 and application layers~\autoref{fig:layers}. The core layer provides a
 computational model expressive enough to formulate different types of
 optimization problems. The solver layer gathers various optimization
-algorithms. The third layer consists in several application-dependent
-packages bundling reusable mathematical functions.
+algorithms. The application layer consists in several
+application-dependent packages bundling reusable mathematical
+functions.
 
 
 \subsection{Mathematical function representation}
